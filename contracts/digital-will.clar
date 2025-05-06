@@ -141,3 +141,61 @@
         (ok true)
     )
 )
+
+
+(define-constant ERR-WILL-EXPIRED (err u108))
+
+(define-map will-expiration
+    principal 
+    { expiration-height: uint }
+)
+
+(define-public (set-will-expiration (expiration-height uint))
+    (let ((will (unwrap! (map-get? wills tx-sender) ERR-NO-WILL)))
+        (asserts! (> expiration-height stacks-block-height) ERR-INVALID-ALLOCATION)
+        (map-set will-expiration tx-sender { expiration-height: expiration-height })
+        (ok true)
+    )
+)
+
+(define-read-only (get-will-expiration (owner principal))
+    (match (map-get? will-expiration owner)
+        expiration-data (ok expiration-data)
+        (err ERR-NO-WILL)
+    )
+)
+
+(define-constant ERR-EXECUTOR-EXISTS (err u109))
+(define-constant ERR-INSUFFICIENT-CONFIRMATIONS (err u110))
+
+(define-map executors
+    principal
+    {
+        active: bool,
+        confirmations: uint,
+        required-confirmations: uint
+    }
+)
+
+(define-map executor-list
+    { will-owner: principal, executor: principal }
+    { confirmed: bool }
+)
+
+(define-public (add-executor (executor-principal principal))
+    (let ((will (unwrap! (map-get? wills tx-sender) ERR-NO-WILL)))
+        (asserts! (is-none (map-get? executor-list { will-owner: tx-sender, executor: executor-principal })) ERR-EXECUTOR-EXISTS)
+        (map-set executor-list { will-owner: tx-sender, executor: executor-principal } { confirmed: false })
+        (ok true)
+    )
+)
+
+(define-public (confirm-death (will-owner principal))
+    (let (
+        (executor-data (unwrap! (map-get? executor-list { will-owner: will-owner, executor: tx-sender }) ERR-NOT-AUTHORIZED))
+        (will (unwrap! (map-get? wills will-owner) ERR-NO-WILL))
+    )
+        (map-set executor-list { will-owner: will-owner, executor: tx-sender } { confirmed: true })
+        (ok true)
+    )
+)
