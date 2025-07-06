@@ -10,6 +10,11 @@ path = 'contracts/digital-will.clar'
 clarity_version = 3
 epoch = 3.1
 
+[contracts.asset-custody]
+path = 'contracts/asset-custody.clar'
+clarity_version = 3
+epoch = 3.1
+
 [contracts.emergency-recovery]
 path = 'contracts/emergency-recovery.clar'
 clarity_version = 3
